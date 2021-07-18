@@ -11,7 +11,7 @@ const pixaBayFetch = axios.create({
   },
 });
 
-export const getImagesData = async (querry, page) => {
+export const getImagesData = async (querry, page = 1) => {
   const response = await pixaBayFetch.get(`?q=${querry}&page=${page}`);
   const images = response.data.hits;
   if (!images.length) {

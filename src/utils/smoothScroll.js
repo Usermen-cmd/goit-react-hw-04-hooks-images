@@ -1,6 +1,6 @@
-export const smoothScrollToDown = () => {
+export const smoothScrollTo = direction => {
   window.scrollTo({
-    top: document.documentElement.scrollHeight,
+    top: direction === 'down' ? document.documentElement.scrollHeight : 1,
     behavior: 'smooth',
   });
 };

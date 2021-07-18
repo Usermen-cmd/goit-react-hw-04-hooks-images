@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 //Styles
 import {
@@ -9,45 +9,41 @@ import {
   SearchFormInput,
 } from './Searchbar.styles';
 
-class Searchbar extends Component {
-  state = {
-    value: '',
+const Searchbar = ({ onSubmitForm }) => {
+  const [value, setValue] = useState('');
+
+  const onInputChange = event => {
+    const currentValue = event.target.value;
+    setValue(currentValue);
   };
 
-  onInputChange = event => {
-    const value = event.target.value;
-    this.setState({ value });
-  };
-
-  onSubmit = event => {
-    const normalizeString = this.state.value.trim();
+  const onSubmit = event => {
+    const normalizeString = value.trim();
     event.preventDefault();
-    this.props.onSubmitForm(normalizeString);
-    this.setState({ value: '' });
+    onSubmitForm(normalizeString);
+    setValue('');
   };
 
-  render() {
-    return (
-      <SearchbarHeader>
-        <SearchForm onSubmit={this.onSubmit}>
-          <SearchFormButton type="submit">
-            <SearchFormButtonLabel>Search</SearchFormButtonLabel>
-          </SearchFormButton>
+  return (
+    <SearchbarHeader>
+      <SearchForm onSubmit={onSubmit}>
+        <SearchFormButton type="submit">
+          <SearchFormButtonLabel>Search</SearchFormButtonLabel>
+        </SearchFormButton>
 
-          <SearchFormInput
-            name="name"
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            value={this.state.value}
-            onChange={this.onInputChange}
-          />
-        </SearchForm>
-      </SearchbarHeader>
-    );
-  }
-}
+        <SearchFormInput
+          name="name"
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          value={value}
+          onChange={onInputChange}
+        />
+      </SearchForm>
+    </SearchbarHeader>
+  );
+};
 
 Searchbar.propTypes = {
   onSubmitForm: PropTypes.func.isRequired,

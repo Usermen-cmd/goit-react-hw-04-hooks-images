@@ -13,14 +13,14 @@ import {
 const ImageGallery = ({ imagesData, onClick, status }) => {
   return (
     <ImageGalleryList>
-      {imagesData.map(({ id, webformatURL, tags }) => {
+      {imagesData.map(({ id, webformatURL, tags, largeImageURL }) => {
         return (
           <ImageGalleryItem key={id}>
             {status ? (
               <ImageGalleryItemImage
                 src={webformatURL}
                 alt={tags}
-                onClick={onClick}
+                onClick={() => onClick({ tags, largeImageURL })}
               />
             ) : (
               <SkeletonTheme color="#dbd7d7" highlightColor="#ebe7e7">
@@ -50,6 +50,7 @@ ImageGallery.propTypes = {
       id: PropTypes.number.isRequired,
       webformatURL: PropTypes.string.isRequired,
       tags: PropTypes.string.isRequired,
+      largeImageURL: PropTypes.string.isRequired,
     }),
   ),
   onClick: PropTypes.func.isRequired,

@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { RiAlarmWarningLine } from 'react-icons/ri';
 import LinearProgress from '@material-ui/core/LinearProgress';
 //Components
@@ -9,122 +9,96 @@ import Searchbar from 'Components/Searchbar/Searchbar';
 //Utils
 import toast, { Toaster } from 'react-hot-toast';
 import { getImagesData } from 'utils/fetch';
-import { smoothScrollToDown } from 'utils/smoothScroll';
+import { smoothScrollTo } from 'utils/smoothScroll';
 import isValidQuerryString from 'utils/isValidQuerryString';
 //Styles
 import { ImageFinderApp } from './ImageFinder.styles';
 
-class ImageFinder extends Component {
-  state = {
-    imagesData: [],
-    querryString: '',
-    page: 1,
-    modalImageData: null,
-    status: null,
-  };
+const ImageFinder = () => {
+  const [imagesData, setImagesData] = useState([]);
+  const [querryString, setQuerryString] = useState('');
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState('idle');
+  const [modalImage, setModalImage] = useState(null);
 
-  componentDidMount() {
-    this.setState({ status: 'idle' });
-  }
-
-  async componentDidUpdate(_, prevState) {
-    const { querryString, page } = this.state;
-
-    const isQuerryStringUpdate = prevState.querryString !== querryString;
-    const isPageUpdate = prevState.page !== page;
-
-    if (isQuerryStringUpdate || isPageUpdate) {
-      try {
-        this.setState({ status: 'pending' });
-        const imagesData = await getImagesData(querryString, page);
-        this.setState({ status: 'resolve' });
-        // if (!imagesData.length) {
-        //   toast.error('некорректный запрос, повторите попытку');
-        //   return;
-        // }
-
-        if (isPageUpdate) {
-          this.setState(prevState => {
-            return {
-              imagesData: [...prevState.imagesData, ...imagesData],
-            };
-          });
-          smoothScrollToDown();
+  useEffect(() => {
+    if (querryString) {
+      (async () => {
+        try {
+          setStatus('pending');
+          const imgData = await getImagesData(querryString, page);
+          setStatus('resolve');
+          if (page > 1) {
+            setImagesData(prev => [...prev, ...imgData]);
+            smoothScrollTo('down');
+            return;
+          }
+          setImagesData(imgData);
+          smoothScrollTo('up');
+        } catch (error) {
+          toast.error(error.message);
         }
-
-        if (isQuerryStringUpdate) {
-          this.setState({ imagesData, page: 1 });
-        }
-      } catch (error) {
-        toast.error(error.message);
-      }
+      })();
     }
-  }
+  }, [querryString, page]);
 
-  onSubmitForm = querryString => {
-    const isValid = isValidQuerryString(querryString, this.state.querryString);
-    if (isValid) this.setState({ querryString });
+  const onSubmitForm = newQuerry => {
+    const isValid = isValidQuerryString(newQuerry, querryString);
+    if (isValid) {
+      setQuerryString(newQuerry);
+      setPage(1);
+    }
   };
 
-  onClickBtn = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const onClickBtn = () => {
+    setPage(prev => prev + 1);
   };
 
-  onImageClick = ({ target }) => {
-    const modalImageData = this.state.imagesData.find(
-      ({ webformatURL }) => webformatURL === target.src,
-    );
-    this.setState({ modalImageData });
-    window.addEventListener('keydown', this.onCloseModal);
+  const onImageClick = obj => {
+    setModalImage(obj);
+    window.addEventListener('keydown', onCloseModal);
   };
 
-  onCloseModal = ({ target, type, code }) => {
+  const onCloseModal = ({ target, type, code }) => {
     const isCloseClick = target.tagName !== 'IMG' && type === 'click';
     const isEscapePress = code === 'Escape' && type === 'keydown';
 
     if (isCloseClick || isEscapePress) {
-      this.setState({ modalImageData: null });
-      window.removeEventListener('keydown', this.onCloseModal);
+      setModalImage(null);
+      window.removeEventListener('keydown', onCloseModal);
     }
   };
 
-  render() {
-    const { imagesData, modalImageData, status } = this.state;
-    const hasImage = imagesData.length > 0;
-    const isResolve = status === 'resolve';
-    const isIdle = status === 'idle';
-    const isPending = status === 'pending';
+  const hasImage = imagesData.length > 0;
+  const isResolve = status === 'resolve';
+  const isIdle = status === 'idle';
+  const isPending = status === 'pending';
 
-    return (
-      <ImageFinderApp>
-        <Searchbar onSubmitForm={this.onSubmitForm} />
-        {isIdle && (
-          <p style={{ textAlign: 'center', fontSize: '24px' }}>Что ищем..?</p>
-        )}
-        {hasImage && (
-          <ImageGallery
-            imagesData={imagesData}
-            onClick={this.onImageClick}
-            status={isResolve}
-          />
-        )}
-        {isPending && !hasImage && <LinearProgress />}
-        {hasImage && <Button onClick={this.onClickBtn} />}
-        {modalImageData && (
-          <Modal imageData={modalImageData} onClick={this.onCloseModal} />
-        )}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 2000,
-            icon: <RiAlarmWarningLine size="30" color="red" />,
-          }}
+  return (
+    <ImageFinderApp>
+      <Searchbar onSubmitForm={onSubmitForm} />
+      {isIdle && (
+        <p style={{ textAlign: 'center', fontSize: '24px' }}>Что ищем..?</p>
+      )}
+      {hasImage && (
+        <ImageGallery
+          imagesData={imagesData}
+          onClick={onImageClick}
+          status={isResolve}
         />
-      </ImageFinderApp>
-    );
-  }
-}
+      )}
+      {isPending && !hasImage && <LinearProgress />}
+      {hasImage && <Button onClick={onClickBtn} />}
+      {modalImage && <Modal imageData={modalImage} onClick={onCloseModal} />}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 2000,
+          icon: <RiAlarmWarningLine size="30" color="red" />,
+        }}
+      />
+    </ImageFinderApp>
+  );
+};
 
 export default ImageFinder;
